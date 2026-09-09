@@ -434,8 +434,8 @@ app.post(
                 const pdfDoc = await pdfjs.getDocument({ data: uint8Array }).promise;
                 let extractedText = "";
                 
-                // Limit to first 10 pages to avoid timeouts
-                const maxPages = Math.min(pdfDoc.numPages, 10);
+                // Limit to first 50 pages to avoid timeouts
+                const maxPages = Math.min(pdfDoc.numPages, 50);
                 console.log(`📄 Processing ${maxPages} of ${pdfDoc.numPages} pages...`);
                 
                 for (let i = 1; i <= maxPages; i++) {
