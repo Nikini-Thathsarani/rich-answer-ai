@@ -1,0 +1,28 @@
+{
+  "name": "rich-answer-ai",
+  "version": "1.0.0",
+  "description": "AI Assistant for Technical Manuals",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nikini-Thathsarani/rich-answer-ai.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Nikini-Thathsarani/rich-answer-ai/issues"
+  },
+  "homepage": "https://github.com/Nikini-Thathsarani/rich-answer-ai#readme",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "multer": "^2.3.0",
+    "openai": "^7.12.1",
+    "pdf-parse": "^2.4.5"
+  }
+}
