@@ -12,7 +12,7 @@ const cosineSimilarity = require("cosine-similarity");
 // Set up pdfjs worker - use local worker file with proper file:// URL
 const workerPath = path.join(
     __dirname,
-    "node_modules/pdfjs-dist/build/pdf.worker.min.js"
+    "node_modules/pdfjs-dist/build/pdf.worker.min.mjs"
 );
 pdfjs.GlobalWorkerOptions.workerSrc = `file://${workerPath.replace(/\\/g, "/")}`;
 
@@ -434,11 +434,19 @@ app.post(
                 const pdfDoc = await pdfjs.getDocument({ data: uint8Array }).promise;
                 let extractedText = "";
                 
-                for (let i = 1; i <= pdfDoc.numPages; i++) {
-                    const page = await pdfDoc.getPage(i);
-                    const textContent = await page.getTextContent();
-                    const pageText = textContent.items.map(item => item.str).join(" ");
-                    extractedText += pageText + "\f"; // Form feed for page separator
+                // Limit to first 10 pages to avoid timeouts
+                const maxPages = Math.min(pdfDoc.numPages, 10);
+                console.log(`📄 Processing ${maxPages} of ${pdfDoc.numPages} pages...`);
+                
+                for (let i = 1; i <= maxPages; i++) {
+                    try {
+                        const page = await pdfDoc.getPage(i);
+                        const textContent = await page.getTextContent();
+                        const pageText = textContent.items.map(item => item.str).join(" ");
+                        extractedText += pageText + "\f"; // Form feed for page separator
+                    } catch (pageError) {
+                        console.log(`⚠️ Could not extract page ${i}, continuing...`);
+                    }
                 }
                 
                 pdfData = {
@@ -546,7 +554,11 @@ app.post(
                 return res.status(400).json({
                     success: false,
                     message:
-                        "Could not extract text from this PDF. Please ensure the PDF contains readable text or try a smaller file (under 1.5MB) for OCR processing."
+                        "Could not extract text from this PDF. Possible reasons:\n" +
+                        "1. PDF contains only scanned images (need OCR - max 3 pages, 1.5MB free tier)\n" +
+                        "2. PDF is password protected\n" +
+                        "3. PDF file is corrupted\n\n" +
+                        "Try: Upload a text-based PDF, reduce file size, or check file integrity."
                 });
             }
 
