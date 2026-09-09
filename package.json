@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/Nikini-Thathsarani/rich-answer-ai#readme",
   "dependencies": {
+    "cosine-similarity": "^1.0.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "multer": "^2.3.0",
