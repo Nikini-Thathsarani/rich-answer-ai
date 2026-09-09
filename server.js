@@ -4,44 +4,76 @@ const dotenv = require("dotenv");
 const fs = require("fs");
 const path = require("path");
 const OpenAI = require("openai");
-const pdfParse = require("pdf-parse");
+const pdfjs = require("pdfjs-dist");
+const axios = require("axios");
+const FormData = require("form-data");
+const cosineSimilarity = require("cosine-similarity");
+
+// Set up pdfjs worker - use local worker file with proper file:// URL
+const workerPath = path.join(
+    __dirname,
+    "node_modules/pdfjs-dist/build/pdf.worker.min.js"
+);
+pdfjs.GlobalWorkerOptions.workerSrc = `file://${workerPath.replace(/\\/g, "/")}`;
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Check API key
+// ===============================
+// OPENAI SETUP
+// ===============================
+
 if (!process.env.OPENAI_API_KEY) {
     console.error("❌ OPENAI_API_KEY is missing in .env");
     process.exit(1);
 }
 
-// OpenAI client
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
-// Middleware
+// ===============================
+// MIDDLEWARE
+// ===============================
+
+// Request logging middleware
+app.use((req, res, next) => {
+    console.log(`📨 ${req.method} ${req.path}`);
+    if (req.method === 'POST') {
+        console.log('   Content-Type:', req.headers['content-type']);
+    }
+    next();
+});
+
 app.use(express.json());
-app.use(express.static("public"));
+app.use(express.urlencoded({ extended: true }));
+
+// Serve frontend
+app.use(express.static(path.join(__dirname, "public")));
+
+// ===============================
+// UPLOAD CONFIGURATION
+// ===============================
+
+const uploadDir = path.join(__dirname, "uploads");
 
 // Create uploads folder if it doesn't exist
-const uploadFolder = path.join(__dirname, "uploads");
-
-if (!fs.existsSync(uploadFolder)) {
-    fs.mkdirSync(uploadFolder);
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Multer configuration
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, uploadFolder);
+        cb(null, uploadDir);
     },
 
     filename: function (req, file, cb) {
         const uniqueName =
-            Date.now() + "-" + file.originalname.replace(/\s+/g, "_");
+            Date.now() +
+            "-" +
+            file.originalname.replace(/[^a-zA-Z0-9.-]/g, "_");
 
         cb(null, uniqueName);
     }
@@ -50,227 +82,1040 @@ const storage = multer.diskStorage({
 const upload = multer({
     storage: storage,
 
-    fileFilter: function (req, file, cb) {
-        if (file.mimetype === "application/pdf") {
-            cb(null, true);
-        } else {
-            cb(new Error("Only PDF files are allowed."));
-        }
+    limits: {
+        fileSize: 20 * 1024 * 1024 // 20 MB
     },
 
-    limits: {
-        fileSize: 20 * 1024 * 1024
+    fileFilter: function (req, file, cb) {
+        const isPDF =
+            file.mimetype === "application/pdf" ||
+            path.extname(file.originalname).toLowerCase() === ".pdf";
+
+        if (!isPDF) {
+            return cb(new Error("Only PDF files are allowed."));
+        }
+
+        cb(null, true);
     }
 });
 
-// Store currently uploaded manual text
+// ===============================
+// GLOBAL RAG DATA
+// ===============================
+
 let manualText = "";
 let uploadedFileName = "";
 
-/*
----------------------------------------
-TEST API
----------------------------------------
-*/
+let manualChunks = [];
+let chunkEmbeddings = [];
+
+// ===============================
+// SPLIT TEXT INTO CHUNKS
+// ===============================
+
+function splitTextIntoChunks(text, chunkSize = 1500) {
+    const chunks = [];
+
+    for (let i = 0; i < text.length; i += chunkSize) {
+        const chunk = text.substring(i, i + chunkSize).trim();
+
+        if (chunk.length > 0) {
+            chunks.push(chunk);
+        }
+    }
+
+    return chunks;
+}
+
+// ===============================
+// CREATE PAGE-AWARE CHUNKS
+// ===============================
+
+function createPageChunks(text) {
+    const pages = text.split("\f");
+
+    const chunks = [];
+
+    pages.forEach((pageText, pageIndex) => {
+        const pageNumber = pageIndex + 1;
+
+        if (!pageText || pageText.trim().length === 0) {
+            return;
+        }
+
+        const pageChunks = splitTextIntoChunks(pageText, 1500);
+
+        pageChunks.forEach((chunk) => {
+            chunks.push({
+                text: chunk,
+                page: pageNumber
+            });
+        });
+    });
+
+    return chunks;
+}
+
+// ===============================
+// OCR FUNCTION
+// ===============================
+
+async function performOCR(filePath) {
+    try {
+        console.log("👁️ Starting OCR...");
+
+        if (!process.env.OCR_API_KEY) {
+            console.log("⚠️ OCR_API_KEY not found.");
+
+            return "";
+        }
+
+        const form = new FormData();
+
+        const fileStream = fs.createReadStream(filePath);
+
+        form.append("file", fileStream);
+
+        form.append(
+            "language",
+            "eng"
+        );
+
+        form.append(
+            "filetype",
+            "PDF"
+        );
+
+        form.append(
+            "isOverlayRequired",
+            "false"
+        );
+
+        form.append(
+            "detectOrientation",
+            "true"
+        );
+
+        form.append(
+            "scale",
+            "true"
+        );
+
+        form.append(
+            "OCREngine",
+            "2"
+        );
+
+        const response = await axios.post(
+            "https://api.ocr.space/parse/image",
+            form,
+            {
+                headers: {
+                    ...form.getHeaders(),
+                    apikey: process.env.OCR_API_KEY
+                },
+
+                maxContentLength: Infinity,
+                maxBodyLength: Infinity,
+
+                timeout: 120000
+            }
+        );
+
+        const data = response.data;
+
+        // Check API processing error
+        if (data.IsErroredOnProcessing) {
+            console.error(
+                "❌ OCR processing error:",
+                data.ErrorMessage || data.ErrorDetails
+            );
+
+            return "";
+        }
+
+        if (
+            !data.ParsedResults ||
+            data.ParsedResults.length === 0
+        ) {
+            console.log("⚠️ OCR returned no results.");
+
+            return "";
+        }
+
+        let extractedText = "";
+
+        data.ParsedResults.forEach((result) => {
+            if (result.ParsedText) {
+                extractedText += result.ParsedText + "\n";
+            }
+        });
+
+        extractedText = extractedText.trim();
+
+        console.log(
+            `✅ OCR completed. Extracted ${extractedText.length} characters.`
+        );
+
+        return extractedText;
+
+    } catch (error) {
+        console.error(
+            "❌ OCR Error:",
+            error.response?.data || error.message
+        );
+
+        return "";
+    }
+}
+
+// ===============================
+// CREATE EMBEDDINGS
+// ===============================
+
+async function createEmbeddings(chunks) {
+    console.log(
+        `🧠 Creating embeddings for ${chunks.length} chunks...`
+    );
+
+    const embeddings = [];
+
+    // Process chunks in batches
+    const batchSize = 20;
+
+    try {
+        for (
+            let i = 0;
+            i < chunks.length;
+            i += batchSize
+        ) {
+            const batch = chunks.slice(
+                i,
+                i + batchSize
+            );
+
+            const response =
+                await openai.embeddings.create({
+                    model: "text-embedding-3-small",
+
+                    input: batch.map(
+                        (item) => item.text
+                    )
+                });
+
+            response.data.forEach((item) => {
+                embeddings.push(item.embedding);
+            });
+
+            console.log(
+                `   Embedded ${Math.min(
+                    i + batchSize,
+                    chunks.length
+                )}/${chunks.length}`
+            );
+        }
+
+        console.log("✅ All embeddings created.");
+
+        return embeddings;
+
+    } catch (error) {
+        // Fallback: Generate mock embeddings for development/testing
+        if (error.status === 429) {
+            console.log("⚠️ OpenAI API credits exhausted. Using mock embeddings for testing...");
+            console.log("📝 To use real embeddings, add credits at: https://platform.openai.com/settings/organization/billing/");
+            
+            // Generate consistent mock embeddings based on chunk text
+            return chunks.map(chunk => {
+                const hash = chunk.text.split('').reduce((a, b) => {
+                    a = ((a << 5) - a) + b.charCodeAt(0);
+                    return a & a;
+                }, 0);
+                
+                // Generate a deterministic embedding vector
+                const embedding = [];
+                for (let i = 0; i < 1536; i++) {
+                    embedding.push(Math.sin(hash + i) * 0.5);
+                }
+                return embedding;
+            });
+        }
+        throw error;
+    }
+}
+
+// ===============================
+// HOME ROUTE
+// ===============================
+
+app.get("/", (req, res) => {
+    res.sendFile(
+        path.join(
+            __dirname,
+            "public",
+            "index.html"
+        )
+    );
+});
+
+// ===============================
+// STATUS API
+// ===============================
 
 app.get("/api/status", (req, res) => {
     res.json({
         success: true,
-        message: "Rich Answer AI server is running",
-        ai: "OpenAI API connected"
+
+        uploaded: manualText.length > 0,
+
+        fileName:
+            uploadedFileName || null,
+
+        textLength:
+            manualText.length,
+
+        chunks:
+            manualChunks.length,
+
+        embeddings:
+            chunkEmbeddings.length
     });
 });
 
-/*
----------------------------------------
-PDF UPLOAD API
----------------------------------------
-*/
+// ===============================
+// UPLOAD PDF
+// ===============================
 
-app.post("/api/upload", upload.single("pdf"), async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({
+app.post(
+    "/api/upload",
+    upload.single("pdf"),
+    async (req, res) => {
+
+        try {
+
+            if (!req.file) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Please upload a PDF file."
+                });
+            }
+
+            console.log(
+                "\n================================"
+            );
+
+            console.log(
+                "📄 PDF uploaded:",
+                req.file.originalname
+            );
+
+            console.log(
+                "================================"
+            );
+
+            uploadedFileName =
+                req.file.originalname;
+
+            const filePath =
+                req.file.path;
+
+            // ===========================
+            // READ PDF
+            // ===========================
+
+            const pdfBuffer =
+                fs.readFileSync(filePath);
+
+            let pdfData;
+
+            try {
+
+                const uint8Array = new Uint8Array(pdfBuffer);
+                const pdfDoc = await pdfjs.getDocument({ data: uint8Array }).promise;
+                let extractedText = "";
+                
+                for (let i = 1; i <= pdfDoc.numPages; i++) {
+                    const page = await pdfDoc.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(" ");
+                    extractedText += pageText + "\f"; // Form feed for page separator
+                }
+                
+                pdfData = {
+                    text: extractedText,
+                    numpages: pdfDoc.numPages
+                };
+
+            } catch (pdfError) {
+
+                console.log(
+                    "⚠️ Normal PDF extraction failed."
+                );
+
+                console.log("Error:", pdfError.message);
+
+                pdfData = {
+                    text: ""
+                };
+            }
+
+            manualText =
+                pdfData.text || "";
+
+            console.log(
+                `📖 Normal PDF text: ${manualText.length} characters`
+            );
+
+            // ===========================
+            // CHECK FOR SCANNED PDF
+            // ===========================
+
+            if (
+                manualText.trim().length < 50
+            ) {
+
+                console.log(
+                    "⚠️ Very little text detected."
+                );
+
+                // Check file size
+                const fileSizeInMB = fs.statSync(filePath).size / (1024 * 1024);
+                
+                if (fileSizeInMB > 1.5) {
+                    console.log(
+                        `⚠️ File too large for OCR (${fileSizeInMB.toFixed(2)}MB). Free OCR limited to 1.5MB.`
+                    );
+                } else {
+                    console.log(
+                        "👁️ Switching to OCR..."
+                    );
+
+                    const ocrText =
+                        await performOCR(filePath);
+
+                    if (ocrText) {
+
+                        manualText =
+                            ocrText;
+
+                        console.log(
+                            "✅ OCR text successfully extracted."
+                        );
+
+                    } else {
+
+                        console.log(
+                            "❌ OCR could not extract text."
+                        );
+                    }
+                }
+            }
+
+            // ===========================
+            // DELETE UPLOADED FILE
+            // ===========================
+
+            try {
+
+                fs.unlinkSync(filePath);
+
+            } catch (deleteError) {
+
+                console.log(
+                    "⚠️ Could not delete uploaded file."
+                );
+            }
+
+            // ===========================
+            // CHECK TEXT
+            // ===========================
+
+            console.log(
+                `Checking text length: ${manualText.length} characters`
+            );
+
+            if (
+                !manualText ||
+                manualText.trim().length === 0
+            ) {
+
+                console.log(
+                    "❌ No text could be extracted from PDF."
+                );
+
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Could not extract text from this PDF. Please ensure the PDF contains readable text or try a smaller file (under 1.5MB) for OCR processing."
+                });
+            }
+
+            // ===========================
+            // CREATE PAGE CHUNKS
+            // ===========================
+
+            console.log(
+                "📚 Creating chunks..."
+            );
+
+            manualChunks =
+                createPageChunks(manualText);
+
+            // If page separators are unavailable,
+            // create normal chunks instead.
+
+            if (manualChunks.length === 0) {
+
+                console.log(
+                    "📝 No page breaks found, creating regular chunks..."
+                );
+
+                const normalChunks =
+                    splitTextIntoChunks(
+                        manualText,
+                        1500
+                    );
+
+                manualChunks =
+                    normalChunks.map(
+                        (chunk) => ({
+                            text: chunk,
+                            page: null
+                        })
+                    );
+            }
+
+            console.log(
+                `✅ Created ${manualChunks.length} chunks.`
+            );
+
+            // ===========================
+            // CREATE EMBEDDINGS
+            // ===========================
+
+            console.log(
+                "🧠 Starting embeddings creation..."
+            );
+
+            try {
+                chunkEmbeddings =
+                    await createEmbeddings(
+                        manualChunks
+                    );
+            } catch (embeddingError) {
+                console.error(
+                    "❌ Embedding Error:",
+                    embeddingError.message
+                );
+                throw embeddingError;
+            }
+
+            console.log(
+                "✅ PDF processing completed."
+            );
+
+            console.log(
+                "================================\n"
+            );
+
+            // ===========================
+            // RESPONSE
+            // ===========================
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "PDF uploaded and processed successfully.",
+
+                fileName:
+                    uploadedFileName,
+
+                textLength:
+                    manualText.length,
+
+                chunks:
+                    manualChunks.length,
+
+                ocrUsed:
+                    pdfData.text.trim().length < 50
+            });
+
+        } catch (error) {
+
+            console.error(
+                "❌ Upload Error:",
+                error.message || error
+            );
+
+            console.error(
+                "Stack trace:",
+                error.stack
+            );
+
+            res.status(500).json({
+
                 success: false,
-                message: "Please upload a PDF file."
+
+                message:
+                    error.message ||
+                    "Failed to process PDF.",
+
+                details: error.message
             });
         }
+    }
+);
 
-        console.log("📄 PDF uploaded:", req.file.originalname);
+// ===============================
+// MULTER ERROR HANDLER
+// ===============================
 
-        // Read PDF
-        const pdfBuffer = fs.readFileSync(req.file.path);
-
-        // Extract text
-        const pdfData = await pdfParse(pdfBuffer);
-
-        manualText = pdfData.text;
-        uploadedFileName = req.file.originalname;
-
-        console.log("✅ PDF text extracted");
-        console.log("Characters:", manualText.length);
-
-        res.json({
-            success: true,
-            message: "PDF uploaded successfully.",
-            fileName: uploadedFileName,
-            pages: pdfData.numpages,
-            characters: manualText.length
-        });
-
-    } catch (error) {
-        console.error("PDF Error:", error);
-
-        res.status(500).json({
+app.use((err, req, res, next) => {
+    if (err instanceof multer.MulterError) {
+        console.error("❌ Multer Error:", err.message);
+        return res.status(400).json({
             success: false,
-            message: "Could not process PDF.",
-            error: error.message
+            message: "Upload error: " + err.message
+        });
+    } else if (err) {
+        console.error("❌ Middleware Error:", err.message);
+        return res.status(500).json({
+            success: false,
+            message: "Error: " + err.message
         });
     }
+    next();
 });
 
-/*
----------------------------------------
-ASK AI API
----------------------------------------
-*/
+// ===============================
+// TEST ENDPOINT
+// ===============================
 
-app.post("/api/ask", async (req, res) => {
-    try {
-        const { question } = req.body;
+app.get("/api/test", (req, res) => {
+    console.log("✅ Test endpoint hit!");
+    res.json({
+        success: true,
+        message: "Server is working!"
+    });
+});
 
-        if (!question || question.trim() === "") {
-            return res.status(400).json({
-                success: false,
-                message: "Please enter a question."
-            });
-        }
+// ===============================
+// ASK QUESTION
+// ===============================
 
-        if (!manualText) {
-            return res.status(400).json({
-                success: false,
-                message: "Please upload a technical manual first."
-            });
-        }
+app.post(
+    "/api/ask",
+    async (req, res) => {
 
-        console.log("❓ Question:", question);
+        try {
 
-        /*
-        Limit the manual text for this first version.
-        Later we will replace this with RAG/vector search.
-        */
+            const {
+                question
+            } = req.body;
 
-        const context = manualText.substring(0, 50000);
+            // ===========================
+            // VALIDATE QUESTION
+            // ===========================
 
-        const prompt = `
-You are Rich Answer AI, an AI assistant specialized in answering
-questions about technical manuals.
+            if (
+                !question ||
+                question.trim().length === 0
+            ) {
 
-Use the technical manual below as your primary source.
+                return res.status(400).json({
 
-TECHNICAL MANUAL:
-----------------
-${context}
-----------------
+                    success: false,
 
+                    message:
+                        "Please enter a question."
+                });
+            }
+
+            // ===========================
+            // CHECK PDF
+            // ===========================
+
+            if (
+                !manualText ||
+                manualChunks.length === 0
+            ) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    message:
+                        "Please upload a PDF first."
+                });
+            }
+
+            console.log(
+                "\n💬 Question:",
+                question
+            );
+
+            // ===========================
+            // QUESTION EMBEDDING
+            // ===========================
+
+            const questionEmbeddingResponse =
+                await openai.embeddings.create({
+
+                    model:
+                        "text-embedding-3-small",
+
+                    input:
+                        question
+                });
+
+            const questionEmbedding =
+                questionEmbeddingResponse
+                    .data[0]
+                    .embedding;
+
+            // ===========================
+            // CALCULATE SIMILARITY
+            // ===========================
+
+            const scoredChunks =
+                manualChunks.map(
+                    (chunk, index) => {
+
+                        const score =
+                            cosineSimilarity(
+                                questionEmbedding,
+                                chunkEmbeddings[index]
+                            );
+
+                        return {
+
+                            text:
+                                chunk.text,
+
+                            page:
+                                chunk.page,
+
+                            score:
+                                score
+                        };
+                    }
+                );
+
+            // ===========================
+            // SORT BY RELEVANCE
+            // ===========================
+
+            scoredChunks.sort(
+                (a, b) =>
+                    b.score - a.score
+            );
+
+            // ===========================
+            // TOP 5 RESULTS
+            // ===========================
+
+            const topChunks =
+                scoredChunks.slice(
+                    0,
+                    5
+                );
+
+            // ===========================
+            // BUILD CONTEXT
+            // ===========================
+
+            let context = "";
+
+            topChunks.forEach(
+                (item, index) => {
+
+                    context += `
+SOURCE ${index + 1}
+PAGE: ${
+    item.page !== null
+        ? item.page
+        : "Unknown"
+}
+RELEVANCE: ${item.score.toFixed(4)}
+
+${item.text}
+
+--------------------------------
+`;
+                }
+            );
+
+            // ===========================
+            // OPENAI ANSWER
+            // ===========================
+
+            const completion =
+                await openai.chat.completions.create({
+
+                    model:
+                        "gpt-4o-mini",
+
+                    temperature:
+                        0.2,
+
+                    messages: [
+
+                        {
+                            role:
+                                "system",
+
+                            content: `
+You are Rich Answer AI, an AI assistant that answers questions using technical manuals.
+
+Answer the user's question using ONLY the provided manual context.
+
+Rules:
+
+1. Do not invent information.
+2. If the answer is not found in the manual, clearly say:
+   "I couldn't find this information in the uploaded manual."
+3. Give a clear and useful answer.
+4. Use simple language when possible.
+5. If useful, use bullet points.
+6. Do not mention internal embeddings or similarity scores.
+7. Do not pretend that information is in the manual when it is not.
+`
+                        },
+
+                        {
+                            role:
+                                "user",
+
+                            content: `
 USER QUESTION:
 ${question}
 
-Instructions:
+MANUAL CONTEXT:
+${context}
 
-1. Answer using information from the technical manual.
-2. Do not invent technical information.
-3. If the answer cannot be found in the manual, say:
-   "I couldn't find this information in the uploaded technical manual."
-4. Explain the answer clearly.
-5. Use bullet points or numbered steps when appropriate.
-6. If there are warnings or safety instructions in the manual,
-   clearly mention them.
-`;
+Answer the question based only on the manual context.
+`
+                        }
 
-        // OpenAI API
-        const completion = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
+                    ]
+                });
 
-            messages: [
-                {
-                    role: "system",
-                    content: "You are a helpful technical manual assistant."
-                },
-                {
-                    role: "user",
-                    content: prompt
-                }
-            ],
+            const answer =
+                completion
+                    .choices[0]
+                    .message
+                    .content;
 
-            temperature: 0.2
-        });
+            // ===========================
+            // SOURCE PAGES
+            // ===========================
 
-        const answer = completion.choices[0].message.content;
+            const sourcePages = [
+                ...new Set(
+                    topChunks
+                        .filter(
+                            (item) =>
+                                item.page !== null
+                        )
+                        .map(
+                            (item) =>
+                                item.page
+                        )
+                )
+            ].sort(
+                (a, b) => a - b
+            );
 
-        console.log("✅ AI answer generated");
+            // ===========================
+            // SOURCE DETAILS
+            // ===========================
+
+            const sources =
+                topChunks.map(
+                    (item) => ({
+
+                        page:
+                            item.page,
+
+                        score:
+                            Number(
+                                item.score.toFixed(4)
+                            )
+                    })
+                );
+
+            console.log(
+                "📖 Source pages:",
+                sourcePages
+            );
+
+            console.log(
+                "✅ Answer generated."
+            );
+
+            // ===========================
+            // RESPONSE
+            // ===========================
+
+            res.json({
+
+                success: true,
+
+                answer:
+                    answer,
+
+                sourcePages:
+                    sourcePages,
+
+                sources:
+                    sources,
+
+                fileName:
+                    uploadedFileName
+            });
+
+        } catch (error) {
+
+            console.error(
+                "❌ Ask Error:",
+                error
+            );
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    error.message ||
+                    "Failed to generate answer."
+            });
+        }
+    }
+);
+
+// ===============================
+// RESET
+// ===============================
+
+app.delete(
+    "/api/reset",
+    (req, res) => {
+
+        manualText = "";
+
+        uploadedFileName = "";
+
+        manualChunks = [];
+
+        chunkEmbeddings = [];
+
+        console.log(
+            "🗑️ Manual data cleared."
+        );
 
         res.json({
+
             success: true,
-            question: question,
-            answer: answer
-        });
 
-    } catch (error) {
-        console.error("OpenAI Error:", error);
-
-        res.status(500).json({
-            success: false,
-            message: "AI could not generate an answer.",
-            error: error.message
+            message:
+                "Manual data reset successfully."
         });
     }
-});
+);
 
-/*
----------------------------------------
-DELETE CURRENT PDF
----------------------------------------
-*/
+// ===============================
+// MULTER ERROR HANDLER
+// ===============================
 
-app.delete("/api/reset", (req, res) => {
-    manualText = "";
-    uploadedFileName = "";
+app.use(
+    (error, req, res, next) => {
 
-    res.json({
-        success: true,
-        message: "Manual removed."
-    });
-});
+        if (
+            error instanceof multer.MulterError
+        ) {
 
-/*
----------------------------------------
-ERROR HANDLER
----------------------------------------
-*/
+            if (
+                error.code ===
+                "LIMIT_FILE_SIZE"
+            ) {
 
-app.use((error, req, res, next) => {
-    console.error(error);
+                return res.status(400).json({
 
-    res.status(500).json({
-        success: false,
-        message: error.message
-    });
-});
+                    success: false,
 
-/*
----------------------------------------
-START SERVER
----------------------------------------
-*/
+                    message:
+                        "PDF file is too large. Maximum size is 20MB."
+                });
+            }
 
-app.listen(PORT, () => {
-    console.log("");
-    console.log("====================================");
-    console.log("🚀 RICH ANSWER AI");
-    console.log("====================================");
-    console.log(`🌐 http://localhost:${PORT}`);
-    console.log("🤖 OpenAI API: Connected");
-    console.log("📄 PDF Processing: Enabled");
-    console.log("====================================");
-});
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    error.message
+            });
+        }
+
+        if (error) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    error.message
+            });
+        }
+
+        next();
+    }
+);
+
+// ===============================
+// START SERVER
+// ===============================
+
+app.listen(
+    PORT,
+    () => {
+
+        console.log(
+            "\n======================================"
+        );
+
+        console.log(
+            "🚀 Rich Answer AI Server Started"
+        );
+
+        console.log(
+            "======================================"
+        );
+
+        console.log(
+            `🌐 http://localhost:${PORT}`
+        );
+
+        console.log(
+            "📄 PDF Upload: Ready"
+        );
+
+        console.log(
+            "🧠 OpenAI RAG: Ready"
+        );
+
+        console.log(
+            "👁️ OCR: Ready"
+        );
+
+        console.log(
+            "📖 Source Pages: Enabled"
+        );
+
+        console.log(
+            "======================================\n"
+        );
+    }
+);

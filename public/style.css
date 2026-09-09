@@ -140,3 +140,12 @@ button:hover {
 #sendBtn {
     margin-left: 10px;
 }
+
+.sources {
+    margin-top: 15px;
+    padding: 10px 14px;
+    background: #eaf4ff;
+    border-left: 4px solid #333;
+    border-radius: 6px;
+    font-size: 14px;
+}

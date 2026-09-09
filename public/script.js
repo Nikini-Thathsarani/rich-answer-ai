@@ -48,40 +48,52 @@ uploadBtn.addEventListener("click", async () => {
             body: formData
         });
 
+        console.log("Response status:", response.status);
+        console.log("Response headers:", response.headers);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Server response error:", errorText);
+            uploadStatus.textContent =
+                `❌ Server error (${response.status}): ${response.statusText}`;
+            return;
+        }
 
         const data = await response.json();
+
+        console.log("Upload response:", data);
 
 
         if (data.success) {
 
             uploadStatus.innerHTML = `
-                ✅ PDF uploaded successfully!
-                <br>
-                File: ${data.fileName}
-                <br>
-                Pages: ${data.pages}
-                <br>
-                Extracted characters: ${data.characters}
+                ✅ <strong>PDF Uploaded Successfully!</strong><br>
+                📄 File: ${data.fileName}<br>
+                📖 Text Length: ${data.textLength} characters<br>
+                📚 Chunks: ${data.chunks}<br>
+                ${data.ocrUsed ? "👁️ OCR was used for scanned PDF" : ""}
             `;
 
             addBotMessage(
-                `📄 I have successfully read <b>${data.fileName}</b>.
-                You can now ask questions about the technical manual.`
+                "✅ <strong>Technical manual loaded successfully!</strong><br>" +
+                `📖 Processed ${data.chunks} chunks.<br>` +
+                "You can now ask questions about the manual."
             );
 
         } else {
 
             uploadStatus.textContent =
-                "❌ " + data.message;
+                "❌ " + (data.message || "Failed to upload PDF.") +
+                (data.details ? `\n(${data.details})` : "");
 
         }
 
     } catch (error) {
 
-        console.error(error);
+        console.error("Fetch error:", error);
 
         uploadStatus.textContent =
-            "❌ Server error while uploading PDF.";
+            "❌ Network error: " + error.message;
 
     }
 
