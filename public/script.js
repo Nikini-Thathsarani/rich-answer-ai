@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 const pdfFile = document.getElementById("pdfFile");
 const uploadBtn = document.getElementById("uploadBtn");
 const uploadStatus = document.getElementById("uploadStatus");
@@ -40,11 +41,31 @@ uploadBtn.addEventListener("click", async () => {
 
         uploadStatus.innerHTML =
             "❌ Please select a PDF file.";
+=======
+// =====================================
+// PDF UPLOAD
+// =====================================
+
+async function uploadPDF() {
+
+    const fileInput =
+        document.getElementById("pdfFile");
+
+    const status =
+        document.getElementById("uploadStatus");
+
+
+    if (!fileInput.files.length) {
+
+        status.innerText =
+            "Please select a PDF.";
+>>>>>>> Stashed changes
 
         return;
     }
 
 
+<<<<<<< Updated upstream
     // --------------------------------------
     // CHECK FILE TYPE
     // --------------------------------------
@@ -200,11 +221,47 @@ uploadBtn.addEventListener("click", async () => {
             uploadStatus.innerHTML =
                 "❌ Server returned an invalid response.<br>" +
                 `HTTP Status: ${response.status}`;
+=======
+    const formData =
+        new FormData();
+
+    formData.append(
+        "manual",
+        fileInput.files[0]
+    );
+
+
+    status.innerText =
+        "Uploading manual...";
+
+
+    try {
+
+        const response =
+            await fetch("/upload", {
+
+                method: "POST",
+
+                body: formData
+
+            });
+
+
+        const data =
+            await response.json();
+
+
+        if (data.error) {
+
+            status.innerText =
+                data.error;
+>>>>>>> Stashed changes
 
             return;
         }
 
 
+<<<<<<< Updated upstream
         // ----------------------------------
         // DISPLAY SERVER RESPONSE
         // ----------------------------------
@@ -358,10 +415,15 @@ uploadBtn.addEventListener("click", async () => {
                 }
                 `;
         }
+=======
+        status.innerText =
+            `✓ Manual uploaded (${data.pages} pages)`;
+>>>>>>> Stashed changes
 
 
     } catch (error) {
 
+<<<<<<< Updated upstream
         // ----------------------------------
         // NETWORK ERROR
         // ----------------------------------
@@ -435,12 +497,39 @@ async function askQuestion() {
     // CHECK QUESTION
     // --------------------------------------
 
+=======
+        console.error(error);
+
+        status.innerText =
+            "Upload failed.";
+
+    }
+
+}
+
+
+// =====================================
+// ASK QUESTION
+// =====================================
+
+async function askQuestion() {
+
+    const input =
+        document.getElementById("question");
+
+
+    const question =
+        input.value.trim();
+
+
+>>>>>>> Stashed changes
     if (!question) {
 
         return;
     }
 
 
+<<<<<<< Updated upstream
     // --------------------------------------
     // DISPLAY USER QUESTION
     // --------------------------------------
@@ -472,10 +561,26 @@ async function askQuestion() {
         addBotMessage(
             "⏳ Thinking..."
         );
+=======
+    addMessage(
+        question,
+        "user"
+    );
+
+
+    input.value = "";
+
+
+    addMessage(
+        "Thinking...",
+        "bot"
+    );
+>>>>>>> Stashed changes
 
 
     try {
 
+<<<<<<< Updated upstream
         console.log(
             "💬 Asking:",
             question
@@ -546,12 +651,52 @@ async function askQuestion() {
             console.error(
                 "JSON error:",
                 error
+=======
+        const response =
+            await fetch("/ask", {
+
+                method: "POST",
+
+                headers: {
+
+                    "Content-Type":
+                        "application/json"
+
+                },
+
+                body: JSON.stringify({
+
+                    question: question
+
+                })
+
+            });
+
+
+        const data =
+            await response.json();
+
+
+        const messages =
+            document.getElementById("messages");
+
+
+        messages.lastElementChild?.remove();
+
+
+        if (data.error) {
+
+            addMessage(
+                "❌ " + data.error,
+                "bot"
+>>>>>>> Stashed changes
             );
 
             return;
         }
 
 
+<<<<<<< Updated upstream
         // ----------------------------------
         // REMOVE LOADING
         // ----------------------------------
@@ -652,10 +797,17 @@ async function askQuestion() {
                 )
             );
         }
+=======
+        addMessage(
+            data.answer,
+            "bot"
+        );
+>>>>>>> Stashed changes
 
 
     } catch (error) {
 
+<<<<<<< Updated upstream
         console.error(
             "🔥 Ask error:",
             error
@@ -679,11 +831,25 @@ async function askQuestion() {
         sendBtn.disabled = false;
 
         questionInput.focus();
+=======
+        console.error(error);
+
+
+        messages.lastElementChild?.remove();
+
+
+        addMessage(
+            "Something went wrong. Please try again.",
+            "bot"
+        );
+
+>>>>>>> Stashed changes
     }
 
 }
 
 
+<<<<<<< Updated upstream
 // ==========================================
 // ADD USER MESSAGE
 // ==========================================
@@ -834,6 +1000,47 @@ function escapeHTML(
 // ==========================================
 
 function scrollMessages() {
+=======
+// =====================================
+// ADD MESSAGE
+// =====================================
+
+function addMessage(text, type) {
+
+    const messages =
+        document.getElementById("messages");
+
+
+    const message =
+        document.createElement("div");
+
+
+    message.className =
+        `message ${type}`;
+
+
+    const avatar =
+        type === "bot"
+            ? "🤖"
+            : "👤";
+
+
+    message.innerHTML = `
+
+        <div class="avatar">
+            ${avatar}
+        </div>
+
+        <div class="bubble">
+            ${escapeHTML(text)}
+        </div>
+
+    `;
+
+
+    messages.appendChild(message);
+
+>>>>>>> Stashed changes
 
     messages.scrollTop =
         messages.scrollHeight;
@@ -841,6 +1048,7 @@ function scrollMessages() {
 }
 
 
+<<<<<<< Updated upstream
 // ==========================================
 // INITIAL SERVER TEST
 // ==========================================
@@ -883,12 +1091,43 @@ async function checkServer() {
             error
         );
     }
+=======
+// =====================================
+// SECURITY
+// =====================================
+
+function escapeHTML(text) {
+
+    const div =
+        document.createElement("div");
+
+    div.textContent =
+        text;
+
+    return div.innerHTML;
+>>>>>>> Stashed changes
 
 }
 
 
+<<<<<<< Updated upstream
 // ==========================================
 // RUN SERVER TEST
 // ==========================================
 
 checkServer();
+=======
+// =====================================
+// ENTER KEY
+// =====================================
+
+function handleEnter(event) {
+
+    if (event.key === "Enter") {
+
+        askQuestion();
+
+    }
+
+}
+>>>>>>> Stashed changes
