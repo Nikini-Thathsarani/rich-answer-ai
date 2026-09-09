@@ -14,35 +14,75 @@
 
     <div class="container">
 
-        <h1>📘 Rich Answer AI</h1>
+        <header>
+            <h1>📘 Rich Answer AI</h1>
 
-        <p>AI Assistant for Technical Manuals</p>
+            <p>
+                AI Assistant for Technical Manuals
+            </p>
+        </header>
 
-        <div class="chat-box">
+
+        <!-- PDF Upload -->
+
+        <section class="upload-section">
+
+            <h2>📄 Upload Technical Manual</h2>
+
+            <input
+                type="file"
+                id="pdfFile"
+                accept=".pdf"
+            >
+
+            <button id="uploadBtn">
+                Upload PDF
+            </button>
+
+            <div id="uploadStatus"></div>
+
+        </section>
+
+
+        <!-- Chat -->
+
+        <section class="chat-box">
 
             <div id="messages">
+
                 <div class="bot-message">
-                    Hello! 👋 Upload a technical manual and ask me a question.
+
+                    Hello! 👋
+
+                    <br><br>
+
+                    Upload a technical manual and ask me a question.
+
                 </div>
+
             </div>
+
 
             <div class="input-area">
 
                 <input
                     type="text"
                     id="question"
-                    placeholder="Ask a question..."
+                    placeholder="Ask a question about the manual..."
                 >
 
-                <button>
+                <button id="sendBtn">
                     Send
                 </button>
 
             </div>
 
-        </div>
+        </section>
 
     </div>
+
+
+    <script src="script.js"></script>
 
 </body>
 
