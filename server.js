@@ -13,9 +13,21 @@ const OpenAI = require("openai");
 const pdfjs = require("pdfjs-dist");
 const cosineSimilarity = require("cosine-similarity");
 
-const {
-    createCanvas
-} = require("canvas");
+let createCanvas = null;
+
+try {
+
+    const canvasModule = require("canvas");
+
+    createCanvas = canvasModule.createCanvas;
+
+} catch (error) {
+
+    console.warn(
+        "⚠️ canvas native module is unavailable. OCR/page rendering will be disabled until the native dependency is installed for this Node version."
+    );
+
+}
 
 const {
     createWorker
@@ -38,20 +50,37 @@ const PORT =
 // OPENAI
 // ============================================================
 
-if (!process.env.OPENAI_API_KEY) {
-
-    console.error(
-        "❌ OPENAI_API_KEY is missing in .env"
-    );
-
-    process.exit(1);
-}
+const openaiApiKey =
+    process.env.OPENAI_API_KEY || "";
 
 const openai =
-    new OpenAI({
-        apiKey:
-            process.env.OPENAI_API_KEY
-    });
+    openaiApiKey
+        ? new OpenAI({
+            apiKey: openaiApiKey
+        })
+        : null;
+
+if (!openai) {
+
+    console.warn(
+        "⚠️ OPENAI_API_KEY is missing. Add it to a .env file to enable AI features."
+    );
+
+}
+
+function requireOpenAI() {
+
+    if (!openai) {
+
+        throw new Error(
+            "OPENAI_API_KEY is not configured. Add it to your .env file before using AI features."
+        );
+
+    }
+
+    return openai;
+
+}
 
 
 // ============================================================
@@ -621,6 +650,14 @@ async function renderPDFPage(
     pageNumber
 ) {
 
+    if (!createCanvas) {
+
+        throw new Error(
+            "PDF page rendering is unavailable because the native canvas dependency is not installed for this environment."
+        );
+
+    }
+
     const page =
         await pdfDoc.getPage(
             pageNumber
@@ -973,6 +1010,8 @@ async function createEmbeddings(
     chunks
 ) {
 
+    const client = requireOpenAI();
+
     console.log(
         `🧠 Creating embeddings for ${chunks.length} chunks...`
     );
@@ -1001,7 +1040,7 @@ async function createEmbeddings(
 
 
             const response =
-                await openai
+                await client
                     .embeddings
                     .create({
 
@@ -1095,10 +1134,12 @@ async function createQuestionEmbedding(
     question
 ) {
 
+    const client = requireOpenAI();
+
     try {
 
         const response =
-            await openai
+            await client
                 .embeddings
                 .create({
 
@@ -1791,6 +1832,8 @@ ${chunk.text}
             // AI ANSWER
             // ----------------------------------------
 
+            const client = requireOpenAI();
+
             let answer =
                 "";
 
@@ -1802,7 +1845,7 @@ ${chunk.text}
             try {
 
                 const completion =
-                    await openai
+                    await client
                         .chat
                         .completions
                         .create({
