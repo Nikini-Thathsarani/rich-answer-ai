@@ -1,16 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< Updated upstream
 
     <title>Rich Answer AI</title>
 
+=======
+    <title>Rich Answer AI - Technical Manual Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+>>>>>>> Stashed changes
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
+<<<<<<< Updated upstream
 
     <div class="container">
 
@@ -58,9 +64,19 @@
 
                     Upload a technical manual and ask me a question.
 
+=======
+    <div class="app-layout">
+        <!-- TOP APP HEADER -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="brand-icon">📘</div>
+                <div class="brand-text">
+                    <h1>Rich Answer AI</h1>
+                    <p>AI Assistant for Technical Manuals, Schematics & Diagrams</p>
+>>>>>>> Stashed changes
                 </div>
-
             </div>
+<<<<<<< Updated upstream
 
 
             <div class="input-area">
@@ -81,9 +97,218 @@
 
     </div>
 
+=======
+            <div class="header-status">
+                <div id="aiModeBadge" class="status-badge status-loading">
+                    <span class="status-dot"></span>
+                    <span id="aiModeText">Connecting...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT WRAPPER -->
+        <main class="main-content">
+            <!-- SIDEBAR: UPLOAD & MANUAL STATS -->
+            <aside class="sidebar">
+                <!-- PDF Upload Zone -->
+                <section class="card upload-card" id="uploadCard">
+                    <div class="card-header">
+                        <h2>📄 Manual Upload</h2>
+                    </div>
+                    
+                    <div class="drop-zone" id="dropZone">
+                        <div class="drop-icon">📁</div>
+                        <p class="drop-title">Drag & drop your PDF manual here</p>
+                        <p class="drop-subtitle">or click to browse from device</p>
+                        <input type="file" id="pdfFile" accept=".pdf" class="file-input">
+                        <span class="file-hint">Max file size: 30 MB (Text & Scanned PDFs)</span>
+                    </div>
+
+                    <div id="selectedFileInfo" class="selected-file-info hidden">
+                        <div class="file-details">
+                            <span class="file-name" id="selectedFileName">manual.pdf</span>
+                            <span class="file-size" id="selectedFileSize">0 MB</span>
+                        </div>
+                        <button id="uploadBtn" class="btn btn-primary btn-block">
+                            <span class="btn-icon">⚡</span> Index Manual
+                        </button>
+                    </div>
+
+                    <div id="uploadStatus" class="upload-status hidden"></div>
+                </section>
+
+                <!-- Active Manual Details Card (shown after upload) -->
+                <section class="card manual-card hidden" id="manualCard">
+                    <div class="card-header flex-between">
+                        <h2>📑 Active Manual</h2>
+                        <button id="resetManualBtn" class="btn btn-sm btn-outline-danger" title="Clear current manual">
+                            🗑️ Reset
+                        </button>
+                    </div>
+
+                    <div class="manual-info-grid">
+                        <div class="info-item full-width">
+                            <span class="info-label">File Name</span>
+                            <span class="info-val font-mono" id="activeDocName">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Pages</span>
+                            <span class="info-val" id="activeDocPages">0</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">RAG Chunks</span>
+                            <span class="info-val" id="activeDocChunks">0</span>
+                        </div>
+                        <div class="info-item full-width">
+                            <span class="info-label">Extraction Method</span>
+                            <span class="info-val badge-tag" id="activeDocMethod">PDF.js Text</span>
+                        </div>
+                    </div>
+
+                    <div class="quick-view-action">
+                        <button id="browsePagesBtn" class="btn btn-secondary btn-block">
+                            📖 Browse Manual Pages
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Suggested Questions -->
+                <section class="card suggestions-card hidden" id="suggestionsCard">
+                    <div class="card-header">
+                        <h2>💡 Quick Inquiries</h2>
+                    </div>
+                    <div class="suggestion-chips">
+                        <button class="chip-btn" data-query="Summarize the core purpose and main components of this manual.">
+                            📋 Summary of Manual
+                        </button>
+                        <button class="chip-btn" data-query="What are the critical safety warnings and precautions mentioned?">
+                            ⚠️ Safety Precautions
+                        </button>
+                        <button class="chip-btn" data-query="List the step-by-step troubleshooting guide or procedures.">
+                            🔧 Troubleshooting Steps
+                        </button>
+                        <button class="chip-btn" data-query="What are the technical specifications, ratings, or dimensions?">
+                            ⚙️ Technical Specs
+                        </button>
+                    </div>
+                </section>
+            </aside>
+
+            <!-- CHAT WORKSPACE -->
+            <section class="chat-workspace">
+                <div class="chat-header">
+                    <div class="chat-title">
+                        <h2>Interactive Assistant</h2>
+                        <span id="chatSubtitle" class="chat-subtitle">Upload a manual to begin querying</span>
+                    </div>
+                    <div class="chat-actions">
+                        <button id="clearChatBtn" class="btn btn-sm btn-ghost" title="Clear conversation">
+                            🧹 Clear Chat
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Chat Message Stream -->
+                <div id="messages" class="messages-container">
+                    <div class="message bot-message welcome-message">
+                        <div class="message-avatar">🤖</div>
+                        <div class="message-body">
+                            <div class="message-content">
+                                <h3>Welcome to Rich Answer AI! 👋</h3>
+                                <p>I am your specialized assistant for technical manuals, equipment guides, schematics, and service docs.</p>
+                                <p><strong>How it works:</strong></p>
+                                <ul>
+                                    <li>Upload any technical manual (PDF format).</li>
+                                    <li>Ask any question about procedures, specifications, or part numbers.</li>
+                                    <li>Get precise answers with <strong>clickable page previews</strong> to inspect diagrams, schematics, and tables!</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Input Controls -->
+                <div class="chat-input-container">
+                    <div class="input-wrapper">
+                        <textarea 
+                            id="question" 
+                            rows="1" 
+                            placeholder="Ask a question about the manual (e.g., 'What are the safety steps on page 3?')..."
+                            disabled
+                        ></textarea>
+                        <button id="sendBtn" class="send-btn" disabled title="Send question">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="input-hint">
+                        <span>Press <strong>Enter</strong> to send, <strong>Shift + Enter</strong> for a new line</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- RICH PAGE INSPECTOR MODAL -->
+    <div id="pageModal" class="modal-backdrop hidden">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <span class="modal-badge">MANUAL VIEWER</span>
+                    <h3 id="modalPageTitle">Page 1 Preview</h3>
+                </div>
+                <div class="modal-tools">
+                    <button id="zoomOutBtn" class="tool-btn" title="Zoom Out">🔍 -</button>
+                    <span id="zoomLevelText" class="zoom-text">100%</span>
+                    <button id="zoomInBtn" class="tool-btn" title="Zoom In">🔍 +</button>
+                    <button id="zoomResetBtn" class="tool-btn" title="Reset Zoom">↺</button>
+                    <button id="modalCloseBtn" class="modal-close-btn" title="Close">&times;</button>
+                </div>
+            </div>
+
+            <!-- Tab Switcher -->
+            <div class="modal-tabs">
+                <button id="tabImageBtn" class="modal-tab active">🖼️ Schematics & Diagrams</button>
+                <button id="tabTextBtn" class="modal-tab">📝 Extracted Text</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Visual Page View -->
+                <div id="modalImageView" class="modal-pane active">
+                    <div id="imageScrollContainer" class="image-scroll-container">
+                        <div id="imageLoadingSpinner" class="spinner-container hidden">
+                            <div class="spinner"></div>
+                            <p>Rendering high-resolution page...</p>
+                        </div>
+                        <img id="modalPageImage" src="" alt="Manual Page" class="modal-page-img">
+                    </div>
+                </div>
+
+                <!-- Text Excerpt View -->
+                <div id="modalTextView" class="modal-pane">
+                    <div class="text-content-box font-mono" id="modalPageText">
+                        Loading page text...
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button id="modalPrevPage" class="btn btn-secondary">◀ Previous Page</button>
+                <div class="page-indicator">
+                    Page <input type="number" id="modalPageJump" min="1" max="1" value="1"> of <span id="modalTotalPages">1</span>
+                </div>
+                <button id="modalNextPage" class="btn btn-secondary">Next Page ▶</button>
+            </div>
+        </div>
+    </div>
+>>>>>>> Stashed changes
 
     <script src="script.js"></script>
-
 </body>
+<<<<<<< Updated upstream
 
 </html>
+=======
+</html>
+>>>>>>> Stashed changes
