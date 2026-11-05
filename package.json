@@ -4,9 +4,9 @@
   "description": "AI Assistant for Technical Manuals",
   "main": "server.js",
   "scripts": {
-    "dev": "node server.js",
     "start": "node server.js",
-    "test": "node --check server.js"
+    "dev": "node server.js",
+    "test": "node test-e2e.js"
   },
   "repository": {
     "type": "git",

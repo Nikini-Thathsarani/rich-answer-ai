@@ -1,753 +1,230 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Cleo - Technical Manual Assistant</title>
-
+    <title>Rich Answer AI - Technical Manual Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
-<div class="app">
-
-<<<<<<< Updated upstream
-        <header>
-            <h1>📘 Rich Answer AI</h1>
-
-            <p>
-                AI Assistant for Technical Manuals
-            </p>
-        </header>
-
-
-        <!-- PDF Upload -->
-
-        <section class="upload-section">
-
-            <h2>📄 Upload Technical Manual</h2>
-
-            <input
-                type="file"
-                id="pdfFile"
-                accept=".pdf"
-            >
-
-            <button id="uploadBtn">
-                Upload PDF
-            </button>
-
-            <div id="uploadStatus"></div>
-
-        </section>
-
-
-        <!-- Chat -->
-
-        <section class="chat-box">
-
-            <div id="messages">
-
-                <div class="bot-message">
-
-                    Hello! 👋
-
-                    <br><br>
-
-                    Upload a technical manual and ask me a question.
-
+    <div class="app-layout">
+        <!-- TOP APP HEADER -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="brand-icon">📘</div>
+                <div class="brand-text">
+                    <h1>Rich Answer AI</h1>
+                    <p>AI Assistant for Technical Manuals, Schematics & Diagrams</p>
                 </div>
-
             </div>
-
-
-            <div class="input-area">
-
-                <input
-                    type="text"
-                    id="question"
-                    placeholder="Ask a question about the manual..."
-                >
-
-                <button id="sendBtn">
-                    Send
-=======
-    <!-- ================= SIDEBAR ================= -->
-
-    <aside class="sidebar">
-
-        <!-- Brand -->
-        <div class="brand">
-
-            <!-- LEFT BOT VIDEO -->
-            <div class="bot-video-container">
-
-                <video
-                    id="leftBotVideo"
-                    class="bot-video"
-                    autoplay
-                    muted
-                    loop
-                    playsinline
-                >
-                    <source src="videos/left-bot.mp4" type="video/mp4">
-                </video>
-
-            </div>
-
-            <h1>Cleo</h1>
-
-            <p>
-                Technical Manual Assistant
-            </p>
-
-        </div>
-
-
-        <!-- NEW CHAT -->
-        <button class="new-chat-btn" onclick="newChat()">
-            <span>＋</span>
-            New Chat
-        </button>
-
-
-        <!-- SEARCH -->
-        <div class="search-box">
-
-            <span>⌕</span>
-
-            <input
-                type="text"
-                id="chatSearch"
-                placeholder="Search conversations..."
-                oninput="searchChats()"
-            >
-
-        </div>
-
-
-        <!-- UPLOAD MANUAL -->
-        <div class="upload-section">
-
-            <div class="section-title">
-
-                <span class="section-icon">📄</span>
-
-                <h3>
-                    Technical Manual
-                </h3>
-
-            </div>
-
-            <p>
-                Upload a PDF technical manual
-                to start asking questions.
-            </p>
-
-
-            <label class="file-upload">
-
-                <input
-                    type="file"
-                    id="pdfFile"
-                    accept=".pdf"
-                    onchange="showFileName()"
-                >
-
-                <span class="upload-icon">
-                    📎
-                </span>
-
-                <span id="fileName">
-                    Choose PDF manual
-                </span>
-
-            </label>
-
-
-            <button
-                class="upload-btn"
-                onclick="uploadPDF()"
-            >
-                <span>⬆</span>
-                Upload Manual
-            </button>
-
-
-            <div
-                id="uploadStatus"
-                class="upload-status"
-            ></div>
-
-        </div>
-
-
-        <!-- QUICK TOOLS -->
-        <div class="quick-tools">
-
-            <p class="tools-title">
-                QUICK TOOLS
-            </p>
-
-            <button onclick="clearChat()">
-                <span>🗑️</span>
-                Clear Chat
-            </button>
-
-            <button onclick="downloadChat()">
-                <span>⬇️</span>
-                Export Chat
-            </button>
-
-            <button onclick="showHelp()">
-                <span>❔</span>
-                Help & Guide
-            </button>
-
-        </div>
-
-
-        <!-- SIDEBAR FOOTER -->
-        <div class="sidebar-footer">
-
-            <div class="ai-status">
-
-                <span class="online-dot"></span>
-
-                <span>
-                    AI Powered
-                </span>
-
-            </div>
-
-            <span class="footer-divider">•</span>
-
-            <span>
-                Cleo
-            </span>
-
-        </div>
-
-    </aside>
-
-
-
-    <!-- ================= MAIN CHAT ================= -->
-
-    <main class="chat-area">
-
-
-        <!-- BACKGROUND VIDEO -->
-
-        <video
-            id="chatBackgroundVideo"
-            class="chat-background-video"
-            autoplay
-            muted
-            loop
-            playsinline
-        >
-
-            <source
-                src="videos/chat-bot.mp4"
-                type="video/mp4"
-            >
-
-        </video>
-
-
-        <!-- DARK OVERLAY -->
-
-        <div class="chat-video-overlay"></div>
-
-
-
-        <!-- ================= CHAT HEADER ================= -->
-
-        <header class="chat-header">
-
-            <div class="header-left">
-
-                <div class="header-bot-icon">
-
-                    <span>✦</span>
-
-                </div>
-
-                <div>
-
-                    <h2>
-                        Cleo
-                    </h2>
-
-                    <p>
-                        Technical Manual Assistant
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            <div class="header-right">
-
-                <div class="status">
-
+            <div class="header-status">
+                <div id="aiModeBadge" class="status-badge status-loading">
                     <span class="status-dot"></span>
-
-                    Online
-
+                    <span id="aiModeText">Connecting...</span>
                 </div>
-
-
-                <button
-                    class="header-btn"
-                    onclick="clearChat()"
-                    title="Clear conversation"
-                >
-                    🗑️
->>>>>>> Stashed changes
-                </button>
-
             </div>
-
-<<<<<<< Updated upstream
-        </section>
-=======
         </header>
 
-
-
-        <!-- ================= MESSAGES ================= -->
-
-        <section
-            id="messages"
-            class="messages"
-        >
-
-            <div
-                id="chatContent"
-                class="chat-content"
-            >
-
-
-                <!-- WELCOME -->
-
-                <div
-                    id="welcome"
-                    class="welcome"
-                >
-
-                    <div class="welcome-icon">
-
-                        <span>✦</span>
-
+        <!-- MAIN CONTENT WRAPPER -->
+        <main class="main-content">
+            <!-- SIDEBAR: UPLOAD & MANUAL STATS -->
+            <aside class="sidebar">
+                <!-- PDF Upload Zone -->
+                <section class="card upload-card" id="uploadCard">
+                    <div class="card-header">
+                        <h2>📄 Manual Upload</h2>
+                    </div>
+                    
+                    <div class="drop-zone" id="dropZone">
+                        <div class="drop-icon">📁</div>
+                        <p class="drop-title">Drag & drop your PDF manual here</p>
+                        <p class="drop-subtitle">or click to browse from device</p>
+                        <input type="file" id="pdfFile" accept=".pdf" class="file-input">
+                        <span class="file-hint">Max file size: 30 MB (Text & Scanned PDFs)</span>
                     </div>
 
-
-                    <h2>
-                        Welcome to Cleo
-                    </h2>
-
-
-                    <p>
-                        Your intelligent assistant for
-                        understanding technical manuals.
-                    </p>
-
-
-                    <!-- FEATURE CARDS -->
-
-                    <div class="feature-cards">
-
-
-                        <div
-                            class="feature-card"
-                            onclick="quickQuestion('Explain this manual')"
-                        >
-
-                            <div class="feature-icon">
-                                📄
-                            </div>
-
-                            <div>
-
-                                <strong>
-                                    Manual Analysis
-                                </strong>
-
-                                <p>
-                                    Understand technical documents
-                                    quickly.
-                                </p>
-
-                            </div>
-
+                    <div id="selectedFileInfo" class="selected-file-info hidden">
+                        <div class="file-details">
+                            <span class="file-name" id="selectedFileName">manual.pdf</span>
+                            <span class="file-size" id="selectedFileSize">0 MB</span>
                         </div>
-
-
-
-                        <div
-                            class="feature-card"
-                            onclick="quickQuestion('Show important diagrams')"
-                        >
-
-                            <div class="feature-icon">
-                                🖼️
-                            </div>
-
-                            <div>
-
-                                <strong>
-                                    Visual Answers
-                                </strong>
-
-                                <p>
-                                    Find relevant diagrams
-                                    and illustrations.
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <div
-                            class="feature-card"
-                            onclick="quickQuestion('Show technical specifications')"
-                        >
-
-                            <div class="feature-icon">
-                                📊
-                            </div>
-
-                            <div>
-
-                                <strong>
-                                    Smart Tables
-                                </strong>
-
-                                <p>
-                                    Extract useful technical
-                                    specifications.
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
+                        <button id="uploadBtn" class="btn btn-primary btn-block">
+                            <span class="btn-icon">⚡</span> Index Manual
+                        </button>
                     </div>
 
+                    <div id="uploadStatus" class="upload-status hidden"></div>
+                </section>
 
-                    <!-- SUGGESTIONS -->
-
-                    <div class="suggestions">
-
-                        <p>
-                            Try asking
-                        </p>
-
-                        <div class="suggestion-buttons">
-
-                            <button onclick="quickQuestion('What is this manual about?')">
-                                What is this manual about?
-                            </button>
-
-                            <button onclick="quickQuestion('Explain the main components')">
-                                Explain the main components
-                            </button>
-
-                            <button onclick="quickQuestion('Show important specifications')">
-                                Show specifications
-                            </button>
-
-                        </div>
-
+                <!-- Active Manual Details Card (shown after upload) -->
+                <section class="card manual-card hidden" id="manualCard">
+                    <div class="card-header flex-between">
+                        <h2>📑 Active Manual</h2>
+                        <button id="resetManualBtn" class="btn btn-sm btn-outline-danger" title="Clear current manual">
+                            🗑️ Reset
+                        </button>
                     </div>
 
+                    <div class="manual-info-grid">
+                        <div class="info-item full-width">
+                            <span class="info-label">File Name</span>
+                            <span class="info-val font-mono" id="activeDocName">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Pages</span>
+                            <span class="info-val" id="activeDocPages">0</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">RAG Chunks</span>
+                            <span class="info-val" id="activeDocChunks">0</span>
+                        </div>
+                        <div class="info-item full-width">
+                            <span class="info-label">Extraction Method</span>
+                            <span class="info-val badge-tag" id="activeDocMethod">PDF.js Text</span>
+                        </div>
+                    </div>
+
+                    <div class="quick-view-action">
+                        <button id="browsePagesBtn" class="btn btn-secondary btn-block">
+                            📖 Browse Manual Pages
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Suggested Questions -->
+                <section class="card suggestions-card hidden" id="suggestionsCard">
+                    <div class="card-header">
+                        <h2>💡 Quick Inquiries</h2>
+                    </div>
+                    <div class="suggestion-chips">
+                        <button class="chip-btn" data-query="Summarize the core purpose and main components of this manual.">
+                            📋 Summary of Manual
+                        </button>
+                        <button class="chip-btn" data-query="What are the critical safety warnings and precautions mentioned?">
+                            ⚠️ Safety Precautions
+                        </button>
+                        <button class="chip-btn" data-query="List the step-by-step troubleshooting guide or procedures.">
+                            🔧 Troubleshooting Steps
+                        </button>
+                        <button class="chip-btn" data-query="What are the technical specifications, ratings, or dimensions?">
+                            ⚙️ Technical Specs
+                        </button>
+                    </div>
+                </section>
+            </aside>
+
+            <!-- CHAT WORKSPACE -->
+            <section class="chat-workspace">
+                <div class="chat-header">
+                    <div class="chat-title">
+                        <h2>Interactive Assistant</h2>
+                        <span id="chatSubtitle" class="chat-subtitle">Upload a manual to begin querying</span>
+                    </div>
+                    <div class="chat-actions">
+                        <button id="clearChatBtn" class="btn btn-sm btn-ghost" title="Clear conversation">
+                            🧹 Clear Chat
+                        </button>
+                    </div>
                 </div>
 
+                <!-- Chat Message Stream -->
+                <div id="messages" class="messages-container">
+                    <div class="message bot-message welcome-message">
+                        <div class="message-avatar">🤖</div>
+                        <div class="message-body">
+                            <div class="message-content">
+                                <h3>Welcome to Rich Answer AI! 👋</h3>
+                                <p>I am your specialized assistant for technical manuals, equipment guides, schematics, and service docs.</p>
+                                <p><strong>How it works:</strong></p>
+                                <ul>
+                                    <li>Upload any technical manual (PDF format).</li>
+                                    <li>Ask any question about procedures, specifications, or part numbers.</li>
+                                    <li>Get precise answers with <strong>clickable page previews</strong> to inspect diagrams, schematics, and tables!</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Input Controls -->
+                <div class="chat-input-container">
+                    <div class="input-wrapper">
+                        <textarea 
+                            id="question" 
+                            rows="1" 
+                            placeholder="Ask a question about the manual (e.g., 'What are the safety steps on page 3?')..."
+                            disabled
+                        ></textarea>
+                        <button id="sendBtn" class="send-btn" disabled title="Send question">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="input-hint">
+                        <span>Press <strong>Enter</strong> to send, <strong>Shift + Enter</strong> for a new line</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- RICH PAGE INSPECTOR MODAL -->
+    <div id="pageModal" class="modal-backdrop hidden">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <span class="modal-badge">MANUAL VIEWER</span>
+                    <h3 id="modalPageTitle">Page 1 Preview</h3>
+                </div>
+                <div class="modal-tools">
+                    <button id="zoomOutBtn" class="tool-btn" title="Zoom Out">🔍 -</button>
+                    <span id="zoomLevelText" class="zoom-text">100%</span>
+                    <button id="zoomInBtn" class="tool-btn" title="Zoom In">🔍 +</button>
+                    <button id="zoomResetBtn" class="tool-btn" title="Reset Zoom">↺</button>
+                    <button id="modalCloseBtn" class="modal-close-btn" title="Close">&times;</button>
+                </div>
             </div>
 
-        </section>
-
-
-
-        <!-- ================= TYPING INDICATOR ================= -->
-
-        <div
-            id="typingIndicator"
-            class="typing-indicator hidden"
-        >
-
-            <div class="typing-avatar">
-                ✦
+            <!-- Tab Switcher -->
+            <div class="modal-tabs">
+                <button id="tabImageBtn" class="modal-tab active">🖼️ Schematics & Diagrams</button>
+                <button id="tabTextBtn" class="modal-tab">📝 Extracted Text</button>
             </div>
 
-            <div class="typing-bubble">
+            <div class="modal-body">
+                <!-- Visual Page View -->
+                <div id="modalImageView" class="modal-pane active">
+                    <div id="imageScrollContainer" class="image-scroll-container">
+                        <div id="imageLoadingSpinner" class="spinner-container hidden">
+                            <div class="spinner"></div>
+                            <p>Rendering high-resolution page...</p>
+                        </div>
+                        <img id="modalPageImage" src="" alt="Manual Page" class="modal-page-img">
+                    </div>
+                </div>
 
-                <span></span>
-                <span></span>
-                <span></span>
-
+                <!-- Text Excerpt View -->
+                <div id="modalTextView" class="modal-pane">
+                    <div class="text-content-box font-mono" id="modalPageText">
+                        Loading page text...
+                    </div>
+                </div>
             </div>
 
-            <small>
-                Cleo is thinking...
-            </small>
-
+            <div class="modal-footer">
+                <button id="modalPrevPage" class="btn btn-secondary">◀ Previous Page</button>
+                <div class="page-indicator">
+                    Page <input type="number" id="modalPageJump" min="1" max="1" value="1"> of <span id="modalTotalPages">1</span>
+                </div>
+                <button id="modalNextPage" class="btn btn-secondary">Next Page ▶</button>
+            </div>
         </div>
->>>>>>> Stashed changes
-
-
-
-        <!-- ================= INPUT AREA ================= -->
-
-        <div class="input-wrapper">
-
-
-            <div class="input-box">
-
-
-                <!-- ATTACH BUTTON -->
-
-                <button
-                    class="attach-btn"
-                    onclick="document.getElementById('pdfFile').click()"
-                    title="Attach manual"
-                >
-                    📎
-                </button>
-
-
-                <!-- TEXT INPUT -->
-
-                <textarea
-                    id="question"
-                    rows="1"
-                    placeholder="Ask something about your technical manual..."
-                    onkeydown="handleEnter(event)"
-                ></textarea>
-
-
-                <!-- SEND BUTTON -->
-
-                <button
-                    class="send-btn"
-                    onclick="askQuestion()"
-                    title="Send message"
-                >
-                    ➤
-                </button>
-
-            </div>
-
-
-            <!-- INPUT INFO -->
-
-            <div class="input-bottom">
-
-                <span>
-                    Enter to send
-                </span>
-
-                <span>
-                    •
-                </span>
-
-                <span>
-                    Shift + Enter for new line
-                </span>
-
-            </div>
-
-
-            <p class="input-note">
-
-                Cleo can make mistakes.
-                Verify important technical information.
-
-            </p>
-
-        </div>
-
-    </main>
-
-</div>
-
-
-
-<!-- ================= JAVASCRIPT ================= -->
-
-<script src="script.js"></script>
-
-
-<script>
-
-/* ================= FILE NAME ================= */
-
-function showFileName() {
-
-    const fileInput =
-        document.getElementById("pdfFile");
-
-    const fileName =
-        document.getElementById("fileName");
-
-    if (fileInput.files.length > 0) {
-
-        fileName.textContent =
-            fileInput.files[0].name;
-
-    } else {
-
-        fileName.textContent =
-            "Choose PDF manual";
-
-    }
-
-}
-
-
-/* ================= QUICK QUESTION ================= */
-
-function quickQuestion(text) {
-
-    const input =
-        document.getElementById("question");
-
-    input.value = text;
-
-    input.focus();
-
-}
-
-
-/* ================= NEW CHAT ================= */
-
-function newChat() {
-
-    const messages =
-        document.getElementById("chatContent");
-
-    messages.innerHTML = "";
-
-    location.reload();
-
-}
-
-
-/* ================= CLEAR CHAT ================= */
-
-function clearChat() {
-
-    const messages =
-        document.getElementById("chatContent");
-
-    if (messages) {
-
-        messages.innerHTML = "";
-
-    }
-
-}
-
-
-/* ================= SEARCH ================= */
-
-function searchChats() {
-
-    const search =
-        document.getElementById("chatSearch").value
-        .toLowerCase();
-
-    const messageElements =
-        document.querySelectorAll(".message");
-
-    messageElements.forEach(message => {
-
-        const text =
-            message.textContent.toLowerCase();
-
-        message.style.display =
-            text.includes(search)
-                ? "flex"
-                : "none";
-
-    });
-
-}
-
-
-/* ================= HELP ================= */
-
-function showHelp() {
-
-    alert(
-        "Upload a PDF technical manual and ask Cleo questions about its contents."
-    );
-
-}
-
-
-/* ================= EXPORT CHAT ================= */
-
-function downloadChat() {
-
-    const chat =
-        document.getElementById("chatContent").innerText;
-
-    const blob =
-        new Blob([chat], {
-            type: "text/plain"
-        });
-
-    const url =
-        URL.createObjectURL(blob);
-
-    const link =
-        document.createElement("a");
-
-    link.href = url;
-
-    link.download =
-        "Cleo-Chat.txt";
-
-    link.click();
-
-    URL.revokeObjectURL(url);
-
-}
-
-
-/* ================= ENTER KEY ================= */
-
-function handleEnter(event) {
-
-    if (
-        event.key === "Enter" &&
-        !event.shiftKey
-    ) {
-
-        event.preventDefault();
-
-        askQuestion();
-
-    }
-
-}
-
-</script>
-
+    </div>
 
     <script src="script.js"></script>
-
 </body>
-
 </html>
-```
