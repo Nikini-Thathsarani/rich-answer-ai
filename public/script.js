@@ -1,11 +1,8 @@
-<<<<<<< Updated upstream
-=======
 // ============================================================
 // RICH ANSWER AI - CLIENT INTERACTION LOGIC
 // ============================================================
 
 // DOM Elements
->>>>>>> Stashed changes
 const pdfFile = document.getElementById("pdfFile");
 const dropZone = document.getElementById("dropZone");
 const selectedFileInfo = document.getElementById("selectedFileInfo");
@@ -64,113 +61,11 @@ async function readApiResponse(response, endpoint) {
     const body = await response.text();
     const setupHint = 'Start the app with "npm start", open http://localhost:3000, and check the server terminal for errors.';
 
-<<<<<<< Updated upstream
-// ==========================================
-// UPLOAD PDF
-// ==========================================
-
-uploadBtn.addEventListener("click", async () => {
-
-    const file = pdfFile.files[0];
-
-    // --------------------------------------
-    // CHECK FILE
-    // --------------------------------------
-
-    if (!file) {
-
-        uploadStatus.innerHTML =
-            "❌ Please select a PDF file.";
-
-        return;
-    }
-
-
-    // --------------------------------------
-    // CHECK FILE TYPE
-    // --------------------------------------
-
-    if (
-        file.type !== "application/pdf" &&
-        !file.name.toLowerCase().endsWith(".pdf")
-    ) {
-
-        uploadStatus.innerHTML =
-            "❌ Only PDF files are allowed.";
-
-        return;
-    }
-
-
-    // --------------------------------------
-    // CHECK FILE SIZE
-    // --------------------------------------
-
-    const fileSizeMB =
-        file.size / (1024 * 1024);
-
-    console.log("================================");
-    console.log("📤 UPLOAD STARTED");
-    console.log("================================");
-
-    console.log("📄 File:", file.name);
-    console.log(
-        "📦 Size:",
-        fileSizeMB.toFixed(2),
-        "MB"
-    );
-    console.log("📑 Type:", file.type);
-
-
-    // Backend currently allows 20MB
-
-    if (fileSizeMB > 20) {
-
-        uploadStatus.innerHTML =
-            "❌ PDF is too large.<br>" +
-            "Maximum file size is 20 MB.";
-
-        return;
-    }
-
-
-    // --------------------------------------
-    // SHOW LOADING
-    // --------------------------------------
-
-    uploadStatus.innerHTML =
-        "⏳ <strong>Uploading PDF...</strong><br>" +
-        "Please wait while the manual is being processed.";
-
-
-    // --------------------------------------
-    // CREATE FORM DATA
-    // --------------------------------------
-
-    const formData =
-        new FormData();
-
-    // IMPORTANT:
-    // Must be "pdf" because backend uses:
-    // upload.single("pdf")
-
-    formData.append(
-        "pdf",
-        file
-    );
-
-
-    // --------------------------------------
-    // SEND PDF TO SERVER
-    // --------------------------------------
-
-=======
     if (!body.trim()) {
         throw new Error(`${endpoint} returned an empty response (HTTP ${response.status}). ${setupHint}`);
     }
 
     let data;
->>>>>>> Stashed changes
     try {
         data = JSON.parse(body);
     } catch {
@@ -185,263 +80,6 @@ uploadBtn.addEventListener("click", async () => {
     return data;
 }
 
-<<<<<<< Updated upstream
-        const response =
-            await fetch(
-                "/api/upload",
-                {
-                    method: "POST",
-
-                    // DO NOT add Content-Type here.
-                    // Browser automatically creates:
-                    // multipart/form-data boundary
-
-                    body: formData
-                }
-            );
-
-
-        // ----------------------------------
-        // RESPONSE STATUS
-        // ----------------------------------
-
-        console.log(
-            "📡 HTTP Status:",
-            response.status
-        );
-
-        console.log(
-            "📡 Status Text:",
-            response.statusText
-        );
-
-
-        // ----------------------------------
-        // READ RESPONSE
-        // ----------------------------------
-
-        const responseText =
-            await response.text();
-
-
-        console.log(
-            "📨 SERVER RAW RESPONSE:"
-        );
-
-        console.log(
-            responseText
-        );
-
-
-        // ----------------------------------
-        // CONVERT RESPONSE TO JSON
-        // ----------------------------------
-
-        let data;
-
-        try {
-
-            data =
-                JSON.parse(
-                    responseText
-                );
-
-        } catch (jsonError) {
-
-            console.error(
-                "❌ JSON PARSE ERROR:",
-                jsonError
-            );
-
-            uploadStatus.innerHTML =
-                "❌ Server returned an invalid response.<br>" +
-                `HTTP Status: ${response.status}`;
-
-            return;
-        }
-
-
-        // ----------------------------------
-        // DISPLAY SERVER RESPONSE
-        // ----------------------------------
-
-        console.log(
-            "📨 PARSED SERVER RESPONSE:"
-        );
-
-        console.log(
-            data
-        );
-
-
-        // ----------------------------------
-        // CHECK HTTP ERROR
-        // ----------------------------------
-
-        if (!response.ok) {
-
-            console.error(
-                "❌ Server Error:",
-                data
-            );
-
-
-            uploadStatus.innerHTML =
-                `
-                ❌ <strong>Upload Failed</strong><br>
-                HTTP Status: ${response.status}<br>
-                ${
-                    data.message ||
-                    "Unknown server error."
-                }
-                `;
-
-            return;
-        }
-
-
-        // ----------------------------------
-        // CHECK SUCCESS
-        // ----------------------------------
-
-        if (data.success) {
-
-            console.log(
-                "================================"
-            );
-
-            console.log(
-                "✅ PDF UPLOAD SUCCESSFUL"
-            );
-
-            console.log(
-                "================================"
-            );
-
-
-            // --------------------------------
-            // UPLOAD INFORMATION
-            // --------------------------------
-
-            uploadStatus.innerHTML =
-                `
-                ✅ <strong>PDF Uploaded Successfully!</strong>
-                <br><br>
-
-                📄 <strong>File:</strong>
-                ${escapeHTML(
-                    data.fileName ||
-                    file.name
-                )}
-
-                <br>
-
-                📖 <strong>Total Pages:</strong>
-                ${data.totalPages || "N/A"}
-
-                <br>
-
-                📚 <strong>Processed Pages:</strong>
-                ${data.processedPages || "N/A"}
-
-                <br>
-
-                📝 <strong>Text Length:</strong>
-                ${data.textLength || 0}
-                characters
-
-                <br>
-
-                🧩 <strong>Chunks:</strong>
-                ${data.chunks || 0}
-
-                <br><br>
-
-                ${
-                    data.ocrUsed
-                        ? "👁️ <strong>OCR was used</strong> because the PDF contained little/no selectable text."
-                        : "📄 <strong>Normal PDF text extraction was used.</strong>"
-                }
-                `;
-
-
-            // --------------------------------
-            // CHAT MESSAGE
-            // --------------------------------
-
-            addBotMessage(
-                `
-                ✅ <strong>Technical manual loaded successfully!</strong>
-                <br><br>
-
-                📄 ${escapeHTML(
-                    data.fileName ||
-                    file.name
-                )}
-
-                <br>
-
-                📖 Processed
-                ${data.processedPages || 0}
-                pages.
-
-                <br>
-
-                📚 Created
-                ${data.chunks || 0}
-                searchable chunks.
-
-                <br><br>
-
-                💬 You can now ask questions about the manual.
-                `
-            );
-
-
-        } else {
-
-            // --------------------------------
-            // SERVER RETURNED success:false
-            // --------------------------------
-
-            uploadStatus.innerHTML =
-                `
-                ❌ <strong>Upload Failed</strong>
-                <br>
-                ${
-                    data.message ||
-                    "Failed to process PDF."
-                }
-                `;
-        }
-
-
-    } catch (error) {
-
-        // ----------------------------------
-        // NETWORK ERROR
-        // ----------------------------------
-
-        console.error(
-            "🔥 FETCH ERROR:"
-        );
-
-        console.error(
-            error
-        );
-
-
-        uploadStatus.innerHTML =
-            `
-            ❌ <strong>Network Error</strong>
-            <br>
-            ${escapeHTML(
-                error.message
-            )}
-            <br><br>
-            Please make sure the server is running.
-            `;
-=======
 // ============================================================
 // INITIALIZATION & SERVER STATUS
 // ============================================================
@@ -470,7 +108,6 @@ async function checkServerStatus() {
         console.warn("Server connection check failed:", err);
         aiModeBadge.className = "status-badge status-loading";
         aiModeText.textContent = "Server Disconnected";
->>>>>>> Stashed changes
     }
 }
 
@@ -508,48 +145,8 @@ pdfFile.addEventListener("change", e => {
 function handleFileSelected(file) {
     if (!file) return;
 
-<<<<<<< Updated upstream
-// ==========================================
-// ENTER KEY
-// ==========================================
-
-questionInput.addEventListener(
-    "keydown",
-    (event) => {
-
-        if (
-            event.key === "Enter"
-        ) {
-
-            event.preventDefault();
-
-            askQuestion();
-        }
-
-    }
-);
-
-
-// ==========================================
-// ASK QUESTION FUNCTION
-// ==========================================
-
-async function askQuestion() {
-
-    const question =
-        questionInput.value.trim();
-
-
-    // --------------------------------------
-    // CHECK QUESTION
-    // --------------------------------------
-
-    if (!question) {
-
-=======
     if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
         showUploadStatus("❌ Only PDF files are supported.", "status-error");
->>>>>>> Stashed changes
         return;
     }
 
@@ -559,18 +156,12 @@ async function askQuestion() {
         return;
     }
 
-<<<<<<< Updated upstream
-    // --------------------------------------
-    // DISPLAY USER QUESTION
-    // --------------------------------------
-=======
     activeFile = file;
     selectedFileName.textContent = file.name;
     selectedFileSize.textContent = `${sizeMB} MB`;
     selectedFileInfo.classList.remove("hidden");
     uploadStatus.classList.add("hidden");
 }
->>>>>>> Stashed changes
 
 function showUploadStatus(msg, className) {
     uploadStatus.className = `upload-status ${className}`;
@@ -585,29 +176,8 @@ function showUploadStatus(msg, className) {
 uploadBtn.addEventListener("click", async () => {
     if (!activeFile) return;
 
-<<<<<<< Updated upstream
-    questionInput.value = "";
-
-
-    // --------------------------------------
-    // DISABLE SEND BUTTON
-    // --------------------------------------
-
-    sendBtn.disabled = true;
-
-
-    // --------------------------------------
-    // LOADING MESSAGE
-    // --------------------------------------
-
-    const loading =
-        addBotMessage(
-            "⏳ Thinking..."
-        );
-=======
     uploadBtn.disabled = true;
     showUploadStatus("⏳ <strong>Processing Manual...</strong><br>Extracting pages, OCR & generating RAG embeddings...", "status-info");
->>>>>>> Stashed changes
 
     const formData = new FormData();
     formData.append("pdf", activeFile);
@@ -618,178 +188,13 @@ uploadBtn.addEventListener("click", async () => {
             body: formData
         });
 
-<<<<<<< Updated upstream
-        console.log(
-            "💬 Asking:",
-            question
-        );
-=======
         const data = await readApiResponse(response, "/api/upload");
->>>>>>> Stashed changes
 
         if (response.ok && data.success) {
             showUploadStatus("✅ Manual indexed successfully!", "status-success");
             currentManualPages = data.totalPages;
 
-<<<<<<< Updated upstream
-        // ----------------------------------
-        // SEND QUESTION
-        // ----------------------------------
-
-        const response =
-            await fetch(
-                "/api/ask",
-                {
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body:
-                        JSON.stringify({
-                            question:
-                                question
-                        })
-                }
-            );
-
-
-        console.log(
-            "📡 Ask status:",
-            response.status
-        );
-
-
-        // ----------------------------------
-        // READ RESPONSE
-        // ----------------------------------
-
-        const responseText =
-            await response.text();
-
-
-        console.log(
-            "📨 Ask response:",
-            responseText
-        );
-
-
-        let data;
-
-        try {
-
-            data =
-                JSON.parse(
-                    responseText
-                );
-
-        } catch (error) {
-
-            loading.remove();
-
-            addBotMessage(
-                "❌ Server returned an invalid response."
-            );
-
-            console.error(
-                "JSON error:",
-                error
-            );
-
-            return;
-        }
-
-
-        // ----------------------------------
-        // REMOVE LOADING
-        // ----------------------------------
-
-        loading.remove();
-
-
-        // ----------------------------------
-        // CHECK SUCCESS
-        // ----------------------------------
-
-        if (
-            response.ok &&
-            data.success
-        ) {
-
-            // --------------------------------
-            // FORMAT ANSWER
-            // --------------------------------
-
-            const formattedAnswer =
-                formatAnswer(
-                    data.answer ||
-                    "No answer received."
-                );
-
-
-            // --------------------------------
-            // SOURCE PAGES
-            // --------------------------------
-
-            let sourceText = "";
-
-
-            if (
-                data.sourcePages &&
-                data.sourcePages.length > 0
-            ) {
-
-                sourceText =
-                    `
-                    <div class="sources">
-                        📖 <strong>Source Pages:</strong>
-                        ${data.sourcePages
-                            .map(
-                                page =>
-                                    `Page ${page}`
-                            )
-                            .join(", ")}
-                    </div>
-                    `;
-            }
-
-
-            // --------------------------------
-            // TESTING MODE
-            // --------------------------------
-
-            let testingText = "";
-
-
-            if (
-                data.testingMode
-            ) {
-
-                testingText =
-                    `
-                    <div class="sources">
-                        🧪 <strong>Testing Mode:</strong>
-                        OpenAI credits are currently unavailable.
-                    </div>
-                    `;
-            }
-
-
-            // --------------------------------
-            // DISPLAY ANSWER
-            // --------------------------------
-
-            addBotMessage(
-                formattedAnswer +
-                sourceText +
-                testingText
-            );
-
-=======
             showManualLoadedState(data);
->>>>>>> Stashed changes
 
             addBotMessage(`
                 <h3>✅ Technical Manual Loaded!</h3>
@@ -804,41 +209,11 @@ uploadBtn.addEventListener("click", async () => {
         } else {
             showUploadStatus(`❌ ${data.message || "Failed to process PDF."}`, "status-error");
         }
-<<<<<<< Updated upstream
-
-
-    } catch (error) {
-
-        console.error(
-            "🔥 Ask error:",
-            error
-        );
-
-
-        loading.remove();
-
-
-        addBotMessage(
-            "❌ Could not connect to the server."
-        );
-
-
-    } finally {
-
-        // ----------------------------------
-        // ENABLE SEND BUTTON
-        // ----------------------------------
-
-        sendBtn.disabled = false;
-
-        questionInput.focus();
-=======
     } catch (err) {
         console.error("Upload error:", err);
         showUploadStatus(`❌ Upload failed: ${escapeHTML(err.message)}`, "status-error");
     } finally {
         uploadBtn.disabled = false;
->>>>>>> Stashed changes
     }
 });
 
@@ -862,173 +237,8 @@ function showManualLoadedState(data) {
 // RESET & CLEAR
 // ============================================================
 
-<<<<<<< Updated upstream
-// ==========================================
-// ADD USER MESSAGE
-// ==========================================
-
-function addUserMessage(
-    text
-) {
-
-    const div =
-        document.createElement(
-            "div"
-        );
-
-
-    div.className =
-        "user-message";
-
-
-    div.textContent =
-        text;
-
-
-    messages.appendChild(
-        div
-    );
-
-
-    scrollMessages();
-
-}
-
-
-// ==========================================
-// ADD BOT MESSAGE
-// ==========================================
-
-function addBotMessage(
-    text
-) {
-
-    const div =
-        document.createElement(
-            "div"
-        );
-
-
-    div.className =
-        "bot-message";
-
-
-    div.innerHTML =
-        text;
-
-
-    messages.appendChild(
-        div
-    );
-
-
-    scrollMessages();
-
-
-    return div;
-
-}
-
-
-// ==========================================
-// FORMAT AI ANSWER
-// ==========================================
-
-function formatAnswer(
-    answer
-) {
-
-    if (!answer) {
-
-        return "No answer available.";
-    }
-
-
-    return answer
-
-        // Escape basic HTML first
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-
-        .replace(
-            /</g,
-            "&lt;"
-        )
-
-        .replace(
-            />/g,
-            "&gt;"
-        )
-
-        // Bold Markdown
-        .replace(
-            /\*\*(.*?)\*\*/g,
-            "<strong>$1</strong>"
-        )
-
-        // Numbered list
-        .replace(
-            /^(\d+)\.\s(.+)$/gm,
-            "<strong>$1.</strong> $2"
-        )
-
-        // Bullet points
-        .replace(
-            /^[-•]\s(.+)$/gm,
-            "• $1"
-        )
-
-        // New lines
-        .replace(
-            /\n/g,
-            "<br>"
-        );
-}
-
-
-// ==========================================
-// ESCAPE HTML
-// ==========================================
-
-function escapeHTML(
-    text
-) {
-
-    const div =
-        document.createElement(
-            "div"
-        );
-
-    div.textContent =
-        text;
-
-    return div.innerHTML;
-}
-
-
-// ==========================================
-// SCROLL CHAT
-// ==========================================
-
-function scrollMessages() {
-
-    messages.scrollTop =
-        messages.scrollHeight;
-
-}
-
-
-// ==========================================
-// INITIAL SERVER TEST
-// ==========================================
-
-async function checkServer() {
-=======
 resetManualBtn.addEventListener("click", async () => {
     if (!confirm("Are you sure you want to unload the current manual?")) return;
->>>>>>> Stashed changes
 
     try {
         await fetch("/api/reset", { method: "DELETE" });
@@ -1082,27 +292,6 @@ document.querySelectorAll(".chip-btn").forEach(btn => {
 // ASK QUESTION FUNCTION
 // ============================================================
 
-<<<<<<< Updated upstream
-    } catch (error) {
-
-        console.error(
-            "❌ Server connection failed."
-        );
-
-        console.error(
-            error
-        );
-    }
-
-}
-
-
-// ==========================================
-// RUN SERVER TEST
-// ==========================================
-
-checkServer();
-=======
 sendBtn.addEventListener("click", askQuestion);
 
 questionInput.addEventListener("keydown", e => {
@@ -1393,4 +582,3 @@ function updateZoomDisplay() {
 
 // Check server status on page load
 checkServerStatus();
->>>>>>> Stashed changes
