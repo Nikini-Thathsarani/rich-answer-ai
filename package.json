@@ -4,13 +4,9 @@
   "description": "AI Assistant for Technical Manuals",
   "main": "index.js",
   "scripts": {
-<<<<<<< Updated upstream
-    "test": "echo \"Error: no test specified\" && exit 1"
-=======
     "start": "node server.js",
     "dev": "node server.js",
     "test": "node test-e2e.js"
->>>>>>> Stashed changes
   },
   "repository": {
     "type": "git",
