@@ -2,7 +2,7 @@
   "name": "rich-answer-ai",
   "version": "1.0.0",
   "description": "AI Assistant for Technical Manuals",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
